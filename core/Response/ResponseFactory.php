@@ -31,7 +31,7 @@ class ResponseFactory {
                 ],  302, "Found");
             } else {
                 $modelAndView = new \ModelAndView($controllerResult[0], array_merge($controllerResult[1], $request->getSession()->toArray()));
-                return new Response($this->viewRenderer->render($modelAndView), [], 200, "OK");
+                return new Response($this->viewRenderer->render($modelAndView, $request->getLocale()), [], 200, "OK");
             }
         }
     }

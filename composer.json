@@ -17,6 +17,8 @@
         "swiftmailer/swiftmailer": "^6.2",
       "ext-mysqli": "*",
         "symfony/validator": "^5.0",
-        "symfony/security-csrf": "^5.0"
+        "symfony/security-csrf": "^5.0",
+        "laminas/laminas-i18n": "^2.11",
+        "laminas/laminas-servicemanager": "^3.10"
     }
 }

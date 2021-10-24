@@ -4,18 +4,29 @@ use Middleware\AuthorizationMiddleware;
 use Services\ForgotPasswordService;
 use Request\RequestFactory;
 use Exception\SqlException;
+use Laminas\I18n\Translator\Loader\Gettext;
+use Laminas\I18n\Translator\Loader\PhpArray;
+use Laminas\I18n\Translator\Translator;
 use Middleware\CsrfMiddleware;
 use Middleware\FlashMessageCleanupMiddleware;
+use Middleware\LocalizationMiddleware;
 use Symfony\Component\Security\Csrf\CsrfTokenManager;
 use Symfony\Component\Security\Csrf\TokenGenerator\UriSafeTokenGenerator;
 use Validation\Validator;
 
 return [
+    "translator" => function(ServiceContainer $container) {
+        $translator = new Translator();
+        $baseDir = $container->get("basePath")."/i18n/";
+        $pattern = "%s/messages.php";
+        $translator->addTranslationFilePattern(PhpArray::class, $baseDir, $pattern, "messages");
+        return $translator;
+    }, 
     "responseFactory" => function (ServiceContainer $container) {
         return new Response\ResponseFactory($container->get("viewRenderer"));
     },
     "viewRenderer" => function (ServiceContainer $container) {
-        return new ViewRenderer($container->get("basePath"), $container->get('csrf'));
+        return new ViewRenderer($container->get("basePath"), $container->get('csrf'), $container->get("translator"));
     },
     'responseEmitter' => function () {
         return new Response\ResponseEmitter();
@@ -112,12 +123,14 @@ return [
         return new CsrfTokenManager(new UriSafeTokenGenerator(), $serviceContainer->get('session'));
     },
     'pipeline' => function (ServiceContainer $container) {
+        $config = $container->get("config");
         $pipeline = new Middleware\MiddlewareStack();
         $authMiddleware = new AuthorizationMiddleware(["^/$", "^/image/[0-9]+$", "^/private/[a-z\.0-9]+"], $container->get("authService"), "/login");
         $dispatcherMiddleware = new Middleware\DispatchingMiddleware($container->get("dispatcher"), $container->get("responseFactory"));
         $pipeline->addMiddleware(new CsrfMiddleware($container->get("csrf")));
         $pipeline->addMiddleware($authMiddleware);
         $pipeline->addMiddleware(new FlashMessageCleanupMiddleware);
+        $pipeline->addMiddleware(new LocalizationMiddleware($config["default_locale"], $config["available_locales"]));
         $pipeline->addMiddleware($dispatcherMiddleware);
         return $pipeline;
     },
